@@ -12171,6 +12171,10 @@ var _react2 = _interopRequireDefault(_react);
 
 var _reactRouterDom = __webpack_require__(23);
 
+var _axios = __webpack_require__(31);
+
+var _axios2 = _interopRequireDefault(_axios);
+
 var _StatefulAlbums = __webpack_require__(132);
 
 var _StatefulAlbums2 = _interopRequireDefault(_StatefulAlbums);
@@ -12210,15 +12214,52 @@ function _inherits(subClass, superClass) { if (typeof superClass !== "function" 
 var Main = function (_Component) {
   _inherits(Main, _Component);
 
-  function Main() {
+  function Main(props) {
     _classCallCheck(this, Main);
 
-    return _possibleConstructorReturn(this, (Main.__proto__ || Object.getPrototypeOf(Main)).apply(this, arguments));
+    var _this = _possibleConstructorReturn(this, (Main.__proto__ || Object.getPrototypeOf(Main)).call(this, props));
+
+    _this.state = {
+      playlists: []
+    };
+    _this.handlePlaylistSubmit = _this.handlePlaylistSubmit.bind(_this);
+    return _this;
   }
 
   _createClass(Main, [{
+    key: 'componentDidMount',
+    value: function componentDidMount() {
+      var _this2 = this;
+
+      _axios2.default.get('/api/playlists').then(function (res) {
+        return res.data;
+      }).then(function (playlists) {
+        _this2.setState({ playlists: playlists });
+      }).catch(function (err) {
+        return console.error(err);
+      });
+    }
+  }, {
+    key: 'handlePlaylistSubmit',
+    value: function handlePlaylistSubmit(event, name) {
+      var _this3 = this;
+
+      event.preventDefault();
+      _axios2.default.post('/api/playlists', { name: name }).then(function (res) {
+        return res.data;
+      }).then(function (playlist) {
+        var playlists = _this3.state.playlists;
+        playlists.push(playlist);
+        _this3.setState({ playlists: playlists });
+      }).catch(function (err) {
+        return console.error(err);
+      });
+    }
+  }, {
     key: 'render',
     value: function render() {
+      var _this4 = this;
+
       return _react2.default.createElement(
         _reactRouterDom.HashRouter,
         null,
@@ -12228,7 +12269,7 @@ var Main = function (_Component) {
           _react2.default.createElement(
             'div',
             { className: 'col-xs-2' },
-            _react2.default.createElement(_Sidebar2.default, null)
+            _react2.default.createElement(_Sidebar2.default, { playlists: this.state.playlists })
           ),
           _react2.default.createElement(
             'div',
@@ -12240,7 +12281,9 @@ var Main = function (_Component) {
               _react2.default.createElement(_reactRouterDom.Route, { path: '/albums/:albumId', component: _SingleAlbum2.default }),
               _react2.default.createElement(_reactRouterDom.Route, { exact: true, path: '/artists', component: _AllArtists2.default }),
               _react2.default.createElement(_reactRouterDom.Route, { path: '/artists/:artistId', component: _SingleArtist2.default }),
-              _react2.default.createElement(_reactRouterDom.Route, { path: '/new-playlist', component: _NewPlaylist2.default }),
+              _react2.default.createElement(_reactRouterDom.Route, { path: '/new-playlist', render: function render() {
+                  return _react2.default.createElement(_NewPlaylist2.default, { handlePlaylistSubmit: _this4.handlePlaylistSubmit });
+                } }),
               _react2.default.createElement(_reactRouterDom.Route, { component: _StatefulAlbums2.default })
             )
           ),
@@ -13228,7 +13271,9 @@ var _react = __webpack_require__(4);
 
 var _react2 = _interopRequireDefault(_react);
 
-var _reactRouterDom = __webpack_require__(23);
+var _axios = __webpack_require__(31);
+
+var _axios2 = _interopRequireDefault(_axios);
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
@@ -13241,15 +13286,15 @@ function _inherits(subClass, superClass) { if (typeof superClass !== "function" 
 var NewPlaylist = function (_Component) {
     _inherits(NewPlaylist, _Component);
 
-    function NewPlaylist() {
+    function NewPlaylist(props) {
         _classCallCheck(this, NewPlaylist);
 
-        var _this = _possibleConstructorReturn(this, (NewPlaylist.__proto__ || Object.getPrototypeOf(NewPlaylist)).call(this));
+        var _this = _possibleConstructorReturn(this, (NewPlaylist.__proto__ || Object.getPrototypeOf(NewPlaylist)).call(this, props));
 
         _this.state = {
-            playlistName: ''
+            playlistName: '',
+            hasBeenEditied: false
         };
-        _this.handleSubmit = _this.handleSubmit.bind(_this);
         _this.handleChange = _this.handleChange.bind(_this);
         return _this;
     }
@@ -13258,24 +13303,27 @@ var NewPlaylist = function (_Component) {
         key: 'handleChange',
         value: function handleChange(event) {
             var playlistName = event.target.value;
-            this.setState({ playlistName: playlistName });
-        }
-    }, {
-        key: 'handleSubmit',
-        value: function handleSubmit(event) {
-            event.preventDefault();
-            console.log(this.state.playlistName);
-            this.setState({ playlistName: '' });
+            var hasBeenEditied = true;
+            this.setState({ playlistName: playlistName, hasBeenEditied: hasBeenEditied });
         }
     }, {
         key: 'render',
         value: function render() {
+            var _this2 = this;
+
+            var nameLength = this.state.playlistName.length;
+            var handleSubmit = this.props.handlePlaylistSubmit;
+
             return _react2.default.createElement(
                 'div',
                 { className: 'well' },
                 _react2.default.createElement(
                     'form',
-                    { className: 'form-horizontal', onSubmit: this.handleSubmit },
+                    { className: 'form-horizontal',
+                        onSubmit: function onSubmit(event) {
+                            handleSubmit(event, _this2.state.playlistName);
+                            _this2.setState({ playlistName: '', hasBeenEditied: false });
+                        } },
                     _react2.default.createElement(
                         'fieldset',
                         null,
@@ -13308,13 +13356,21 @@ var NewPlaylist = function (_Component) {
                             _react2.default.createElement(
                                 'div',
                                 { className: 'col-xs-10 col-xs-offset-2' },
-                                this.state.playlistName.length === 0 || this.state.playlistName.length > 16 ? _react2.default.createElement(
-                                    'button',
-                                    { type: 'submit', className: 'btn disabled btn-success' },
-                                    'Create Playlist'
+                                (nameLength === 0 || nameLength > 16) && this.state.hasBeenEditied ? nameLength === 0 ? _react2.default.createElement(
+                                    'div',
+                                    { className: 'alert alert-warning' },
+                                    'Please enter a name'
                                 ) : _react2.default.createElement(
+                                    'div',
+                                    { className: 'alert alert-warning' },
+                                    'Name must be less than or equal to 16 characters'
+                                ) : null,
+                                _react2.default.createElement(
                                     'button',
-                                    { type: 'submit', className: 'btn btn-success' },
+                                    {
+                                        type: 'submit',
+                                        className: nameLength === 0 || nameLength > 16 ? "btn disabled btn-success" : "btn btn-success"
+                                    },
                                     'Create Playlist'
                                 )
                             )
@@ -13409,7 +13465,7 @@ var _reactRouterDom = __webpack_require__(23);
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 var Sidebar = function Sidebar(props) {
-
+  console.log(props.playlists);
   return _react2.default.createElement(
     'sidebar',
     null,
@@ -13448,6 +13504,22 @@ var Sidebar = function Sidebar(props) {
         'h4',
         { className: 'text-muted' },
         'PLAYLISTS'
+      ),
+      _react2.default.createElement('hr', null),
+      _react2.default.createElement(
+        'ul',
+        { className: 'list-unstyled' },
+        props.playlists.map(function (list) {
+          return _react2.default.createElement(
+            'li',
+            { key: list.id, className: 'playlist-item menu-item' },
+            _react2.default.createElement(
+              _reactRouterDom.Link,
+              { to: 'FILL_ME_IN' },
+              list.name
+            )
+          );
+        })
       ),
       _react2.default.createElement(
         'h4',
