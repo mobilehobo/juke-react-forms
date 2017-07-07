@@ -9,6 +9,7 @@ import SingleArtist from './SingleArtist';
 import Sidebar from './Sidebar';
 import Player from './Player';
 import NewPlaylist from './NewPlaylist';
+import SinglePlaylist from './SinglePlaylist';
 
 export default class Main extends Component {
   constructor(props) {
@@ -17,6 +18,7 @@ export default class Main extends Component {
       playlists: []
     };
     this.handlePlaylistSubmit = this.handlePlaylistSubmit.bind(this);
+    this.handlePlaylistSongSubmit = this.handlePlaylistSongSubmit.bind(this);
   }
 
   componentDidMount() {
@@ -40,6 +42,17 @@ export default class Main extends Component {
       .catch(err => console.error(err));
   }
 
+  handlePlaylistSongSubmit(event, playlistId, songId) {
+    event.preventDefault();
+    axios.post(`/api/playlists/${playlistId}/songs`, { id: songId })
+      .then(res => res.data)
+      .then(() => {
+        const playlists = this.state.playlists;
+        this.setState({ playlists });
+      })
+      .catch(err => console.error(err));
+  }
+
   render() {
     return (
       <Router>
@@ -54,6 +67,10 @@ export default class Main extends Component {
               <Route exact path="/artists" component={AllArtists} />
               <Route path="/artists/:artistId" component={SingleArtist} />
               <Route path="/new-playlist" render={() => <NewPlaylist handlePlaylistSubmit={this.handlePlaylistSubmit} />} />
+              <Route path="/playlists/:playlistId" render={({ match }) => {
+                return <SinglePlaylist params={match.params} handlePlaylistSongSubmit={this.handlePlaylistSongSubmit} />;
+              }
+              } />
               <Route component={StatefulAlbums} />
             </Switch>
           </div>

@@ -12,10 +12,23 @@ class SingleArtist extends React.Component {
     this.state = {
       artist: {}
     };
+    this.setArtistState = this.setArtistState.bind(this);
   }
 
   componentDidMount () {
     const artistId = this.props.match.params.artistId;
+    this.setArtistState(artistId);
+  }
+
+  componentWillReceiveProps(newProps){
+    const artistId = newProps.match.params.artistId;
+    if (this.state.artist.id !== artistId)
+    {
+      this.setArtistState(artistId);
+    }
+  }
+
+  setArtistState(artistId){
     const mainPath = `/api/artists/${artistId}`;
     const paths = [mainPath, `${mainPath}/albums`, `${mainPath}/songs`];
     Bluebird
